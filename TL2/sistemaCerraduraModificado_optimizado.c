@@ -207,14 +207,17 @@ void display7SegmentosEscribir4Digitos( uint8_t* digit ){
 /*================== Funciones del reinicio del sistema embebido ==================*/
 
 void reiniciarDisplay(uint8_t* v){
+    // recorro el vector del display y los escribo con 0
     for(int i =0; i<4; i++){
         v[i]='0';
     }
 }
 
 void prenderLedsIntentos(){
+    // Apago los leds que dicen si se logro desbloquear o no la cerradura
     gpioWrite(T_COL2, 0);
     gpioWrite(T_COL0, 0);
+    // Prendo los leds que me dicen la cantidad de intetos
     gpioWrite( LED1, 1 );
     gpioWrite( LED2, 1 );
     gpioWrite( LED3, 1 );
@@ -223,10 +226,12 @@ void prenderLedsIntentos(){
 }
 
 void reiniciarServo(){
+    // Retorno al servo a su posicion original
     servoWrite( SERVO_N, 0 );
 }
 
 void reiniciarSistema( uint8_t* v, int* cantidadIntentos){
+    // Llamo las funciones para reiniciar el sistema
     reiniciarDisplay(v);
     reiniciarLeds();
     reiniciarServo();
@@ -236,26 +241,28 @@ void reiniciarSistema( uint8_t* v, int* cantidadIntentos){
 /*================== Funciones de control del sistema embebido ==================*/
 
 void intentosTerminados( uint8_t* v, int* cantidadIntentos){
+    // Loop para que no se pueda interactuar con el sistema, hasta que se aprete el boton de reinicio
     while(gpioRead(CAN_TD) == 0){
         display7SegmentosEscribir4Digitos(v);
     }
+    // reinicio el sistema
     reiniciarSistema(v,cantidadIntentos);
 }
 
 void descontandoIntentos(int cantidadIntentos,  uint8_t* v ){
     switch(cantidadIntentos){
         case 3:
-            gpioWrite(LED3, 0);
+            gpioWrite(LED3, 0); // Apago este led3, simulando la perdida de un intento
             break;
         case 2:
-            gpioWrite(LED2, 0);
+            gpioWrite(LED2, 0); // Apago este LED2, simulando la perdida de un intento
             break;
         case 1:
-            gpioWrite(LED1, 0);
+            gpioWrite(LED1, 0); // Apago este LED1, simulando la perdida de un intento
             break;
         case 0:
-            gpioWrite(T_COL0, 1);
-            gpioWrite(LEDR, 0);
+            gpioWrite(T_COL0, 1); // Prendo el led rojo, simulando que no quedan intentos
+            gpioWrite(LEDR, 0); // Apago el led restante, simulando la perdida de un intento
             gpioWrite(LEDB, 0);
             break;
         default:
@@ -264,16 +271,16 @@ void descontandoIntentos(int cantidadIntentos,  uint8_t* v ){
 }
 
 void desbloqueoCerradura(int* aciertos, int* cantidadIntentos){
-    servoWrite( SERVO_N, 90 );
-    gpioWrite(T_COL2, 1);
+    servoWrite( SERVO_N, 90 ); // Giro el servo, simulando desbloquear la cerradura
+    gpioWrite(T_COL2, 1); // Prendo el led verde, simulando que se logro desbloquear la cerradura
     aciertos = 0;
     cantidadIntentos = 0;
 }
 
 void falloIntento(uint8_t* v, int* cantidadIntentos){
-    cantidadIntentos--;
-    descontandoIntentos(cantidadIntentos, v);
-    reiniciarDisplay(v);
+    cantidadIntentos--; // Descuentos intentos
+    descontandoIntentos(cantidadIntentos, v); // Muestro el descuento de intentos apagando leds
+    reiniciarDisplay(v); // Reinicio la pantalla del display mostrando 0000
 }
 
 /*==================[funcion principal]======================================*/
@@ -283,7 +290,7 @@ int main( void ){
 
     // ----------------------- CONFIGURACIONES --------------------------- //
     // Inicializar y configurar la plataforma //
-    boardConfig();   
+    boardConfig(); // Inicio la plataforma
     display7SegmentosConfigurarPines(); // Configuracion de pines para el display 7 segmentos
     gpioConfig(T_FIL2 , GPIO_INPUT) ; // Se c o n f i g u r a  e l T_FIL2 como e n t r a d a
     gpioConfig(T_FIL3, GPIO_INPUT) ; // Se c o n f i g u r a  e l T_FIL3 como e n t r a d a
@@ -300,6 +307,7 @@ int main( void ){
 
     uint8_t servoAngle = 0; // 0 a 180 grados
     int posicionDisplay = 0;
+    
     // Configurar Servo
     valor = servoConfig( 0, SERVO_ENABLE );
 
@@ -309,6 +317,7 @@ int main( void ){
     valor = servoWrite( SERVO_N, servoAngle );
     servoAngle = servoRead( SERVO_N );
 
+    // Prendo los leds que muestran los intentos
     gpioWrite( LED1, 1 );
     gpioWrite( LED2, 1 );
     gpioWrite( LED3, 1 );
